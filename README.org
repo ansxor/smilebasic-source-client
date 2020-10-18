@@ -1,3 +1,22 @@
 #+TITLE: SmileBASIC Source Emacs Client
+#+AUTHOR: answer
+
+[[file:preview.png]]
 
 A client for SmileBASIC Source on Emacs. More information to come, trying to bring feature parity with other client before putting any critical information into how to set this up.
+
+The client is not reliable as of right now due to missing features and and issues with how I implemented it, making it not instancable. 
+
+* Important issues [0/1]
+- [ ] Add cooldown to when URL requests fail
+
+* Potential Features? [0/5]
+- [ ] 12y rendering
+  + [ ] Image embedding with keybind
+  + [ ] asd
+- [ ] Category view
+- [ ] Minibuffer chat
+- [ ] Page views
+  + [ ] Program view
+  + [ ] Resource view
+- [ ] Activity feed

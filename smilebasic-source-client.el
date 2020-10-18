@@ -29,9 +29,6 @@
 (defvar smilebasic-source-minibuffer-chat nil
   "The chat buffer that will show active messages in the minibuffer.  If it is non-nil, then it will display new messages from that buffer in real-time.  Only one buffer can be selected at a time.  This will also be the buffer that is selected when doing quick replies.")
 
-(defvar smilebasic-source-activity-buffer nil
-  "The buffer where all activity is shown and actively updated.")
-
 (defvar smilebasic-source-chat-buffers nil
   "The list of chat buffers that the timer will go through and update in real time.")
 
@@ -56,10 +53,6 @@
 
 (defvar smilebasic-source-chat-buffer-last-sent-uid nil
   "The ID of the last user who sent a message to the chat buffer.")
-
-;;; Local variables for Activity buffers:
-(defvar smilebasic-source-activity-buffer-last-page-id nil
-  "The last page ID sent to the activity buffer.")
 
 ;;; Helper functions:
 ;; Buffer manipulation
@@ -170,60 +163,6 @@
 	(password (read-string "Password: ")))
     (setq smilebasic-source-authtoken (smilebasic-source-login-gettoken username password))))
 
-;;; Activity:
-(defconst smilebasic-source-activity-initial-request-url
-  "https://%s/api/Read/chain/?requests=comment-%s&requests=user.0createUserId&requests=content.0parentId&content=name,id"
-  "The initial request made to get information for the activity.")
-
-(defun smilebasic-source-activity-insert-comment (comment users contents)
-  "Insert a COMMENT into the buffer.  Will refer to the list of USERS and CONTENTS in order to properly format."
-  (when smilebasic-source-activity-buffer
-    (with-current-buffer smilebasic-source-activity-buffer
-      (goto-char (point-max))
-      (let ((username)
-	    (content-name)
-	    (user
-	     (let ((uid (cdr (assoc 'createUserId comment))) (value nil) (max-j (length users)) (j nil))
-	       (dotimes (j max-j value)
-		 (when (= uid (cdr (assoc 'id (aref users j))))
-		   (setq value (aref users j))))))
-	    (content
-	     (let ((uid (cdr (assoc 'parentId comment))) (value nil) (max-j (length contents)) (j nil))
-	       (dotimes (j max-j value)
-		 (when (= uid (cdr (assoc 'id (aref contents j))))
-		   (setq value (aref contents j)))))))
-	(setq content-name (cdr (assoc 'name content)))
-	(setq username (cdr (assoc 'username user)))
-	(put-text-property 0 (length username) 'face 'bold username)
-	(put-text-property 0 (length content-name) 'face 'bold content-name)
-	(unless user
-	  (error "THE USER IN COMMENT DOES NOT EXIST IN THE USERLIST"))
-	(unless content
-	  (error "THE CONTENT IN COMMENT DOES NOT EXIST IN THE COMMENT LIST"))
-	(unless (= smilebasic-source-activity-buffer-last-page-id (cdr (assoc 'id content)))
-	  ;; (insert-image (smilebasic-source-icon-content-get 13))
-	  (insert content-name "\n"))
-	(when window-system
-	  (insert-image (smilebasic-source-avatar-get (cdr (assoc 'avatar user)))))
-	(insert username ": ")
-	(let ((cnt (cdr (assoc 'content comment))))
-	  (insert (replace-regexp-in-string "\n$" "" (substring cnt (+ (string-match "\n" cnt) 1))) "\n"))
-
-	(setq-local smilebasic-source-activity-buffer-last-page-id (cdr (assoc 'id content)))))))
-
-(defun smilebasic-source-activity-spawn ()
-  "Spawn a buffer with a live feed of the activity."
-  (unless smilebasic-source-activity-buffer
-    (let ((buffer
-	   (generate-new-buffer "SmileBASIC Source Activity Feed")))
-      (with-current-buffer buffer
-	(setq smilebasic-source-activity-buffer buffer)
-	(kill-all-local-variables)
-
-	(make-local-variable 'smilebasic-source-activity-buffer-last-page-id)
-
-	(setq-local smilebasic-source-activity-buffer-last-page-id -1)))))
-
 ;;; Chat:
 (define-derived-mode smilebasic-source-chat-mode fundamental-mode "SmileBASIC Source Chat"
   "The mode used to view SmileBASIC Source pages in chat view."
@@ -261,7 +200,6 @@
 			      (dotimes (j max-j value)
 				(when (= uid (cdr (assoc 'id (aref users j))))
 				  (setq value (aref users j)))))))
-	    (smilebasic-source-activity-insert-comment (aref comments i) users contents)
 	    (setq username (cdr (assoc 'username user)))
 	    (put-text-property 0 (length username) 'face 'bold username)
 	    (unless user
@@ -337,7 +275,6 @@
 
 (defun smilebasic-source-chat-open-page (id)
   "Opens a chat buffer of page ID."
-  (smilebasic-source-activity-spawn)
   (if (member id smilebasic-source-chat-buffers-ids)
       (switch-to-buffer
        (nth (cl-position id smilebasic-source-chat-buffers-ids) smilebasic-source-chat-buffers))
