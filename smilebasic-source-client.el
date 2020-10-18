@@ -5,11 +5,14 @@
 ;; NEED TO IMPLEMENT MESSAGE SEPERATING IF LONGER THAN 3 MINUTES
 ;;; Code:
 
+(require 'json)
+(require 'cl-lib)
+
 (setq debug-on-error t)
 
 (defgroup smilebasic-source-client nil
   "SmileBASIC Source EMACS Client"
-  :prefix "smilebasic-source-" :group nil
+  :prefix "smilebasic-source-" :group 'comm
   :version "1.0")
 
 (defcustom smilebasic-source-base-url "newdev.smilebasicsource.com"
@@ -85,7 +88,9 @@
   "The URl used to get an avatar file.")
 
 (defcustom smilebasic-source-avatar-size 20
-  "The size of the avatars used for the client.")
+  "The size of the avatars used for the client."
+  :type 'number
+  :group 'smilebasic-source-client)
 
 (defun smilebasic-source-avatar-get-sized (file-id avatar-size)
   "Return an avatar image with ID FILE-ID of size AVATAR-SIZE."
@@ -222,7 +227,6 @@
 ;;; Chat:
 (define-derived-mode smilebasic-source-chat-mode fundamental-mode "SmileBASIC Source Chat"
   "The mode used to view SmileBASIC Source pages in chat view."
-  (read-only-mode t)
   (goto-address-mode t)
   (visual-line-mode t)
   (local-set-key "w" #'smilebasic-source-chat-send-message))
@@ -368,11 +372,7 @@
 			      (cdr (assoc 'id
 					  (aref (cdr (assoc 'content jsondata)) 0))))
 
-		 (kill-all-local-variables)
-
-		 (make-local-variable 'smilebasic-source-chat-buffer-last-sent-id)
-		 (make-local-variable 'smilebasic-source-chat-buffer-last-sent-uid)
-		 (make-local-variable 'smilebasic-source-chat-buffer-page-id)
+		 (smilebasic-source-chat-mode)
 
 		 (setq-local smilebasic-source-chat-buffer-last-sent-id -1)
 		 (setq-local smilebasic-source-chat-buffer-last-sent-uid 0)
@@ -380,7 +380,6 @@
 			     (cdr (assoc 'id
 					 (aref (cdr (assoc 'content jsondata)) 0))))
 
-		 (smilebasic-source-chat-mode)
 		 (let ((comments (cdr (assoc 'comment jsondata)))
 		       (users (cdr (assoc 'user jsondata)))
 		       (contents (cdr (assoc 'content jsondata))))
