@@ -1,0 +1,3 @@
+#+TITLE: SmileBASIC Source Emacs Client
+
+A client for SmileBASIC Source on Emacs. More information to come, trying to bring feature parity with other client before putting any critical information into how to set this up.
